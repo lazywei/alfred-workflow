@@ -19,7 +19,6 @@ from __future__ import print_function, unicode_literals
 
 import binascii
 from contextlib import contextmanager
-import cPickle
 import errno
 import json
 import logging
@@ -638,7 +637,7 @@ class CPickleSerializer(object):
 
         """
 
-        return cPickle.load(file_obj)
+        return pickle.load(file_obj)
 
     @classmethod
     def dump(cls, obj, file_obj):
@@ -653,7 +652,7 @@ class CPickleSerializer(object):
 
         """
 
-        return cPickle.dump(obj, file_obj, protocol=-1)
+        return pickle.dump(obj, file_obj, protocol=-1)
 
 
 class PickleSerializer(object):
@@ -1212,7 +1211,7 @@ class Workflow(object):
             if self.alfred_env.get('workflow_bundleid'):
                 self._bundleid = self.alfred_env.get('workflow_bundleid')
             else:
-                self._bundleid = unicode(self.info['bundleid'], 'utf-8')
+                self._bundleid = str(self.info['bundleid'])
 
         return self._bundleid
 
@@ -1376,7 +1375,7 @@ class Workflow(object):
             # the library is in. CWD will be the workflow root if
             # a workflow is being run in Alfred
             candidates = [
-                os.path.abspath(os.getcwdu()),
+                os.path.abspath(os.getcwd()),
                 os.path.dirname(os.path.abspath(os.path.dirname(__file__)))]
 
             # climb the directory tree until we find `info.plist`
@@ -2167,7 +2166,7 @@ class Workflow(object):
                     name = self._bundleid
                 else:  # pragma: no cover
                     name = os.path.dirname(__file__)
-                self.add_item("Error in workflow '%s'" % name, unicode(err),
+                self.add_item("Error in workflow '%s'" % name, str(err),
                               icon=ICON_ERROR)
                 self.send_feedback()
             return 1
@@ -2252,7 +2251,7 @@ class Workflow(object):
         for item in self._items:
             root.append(item.elem)
         sys.stdout.write('<?xml version="1.0" encoding="utf-8"?>\n')
-        sys.stdout.write(ET.tostring(root).encode('utf-8'))
+        sys.stdout.write(ET.tostring(root).decode('utf-8'))
         sys.stdout.flush()
 
     ####################################################################
@@ -2513,7 +2512,7 @@ class Workflow(object):
             h = groups.get('hex')
             password = groups.get('pw')
             if h:
-                password = unicode(binascii.unhexlify(h), 'utf-8')
+                password = str(binascii.unhexlify(h))
 
         self.logger.debug('Got password : %s:%s', service, account)
 
@@ -2751,9 +2750,9 @@ class Workflow(object):
 
         encoding = encoding or self._input_encoding
         normalization = normalization or self._normalizsation
-        if not isinstance(text, unicode):
-            text = unicode(text, encoding)
-        return unicodedata.normalize(normalization, text)
+        # if not isinstance(text, unicode):
+        #     text = unicode(text, encoding)
+        return unicodedata.normalize(normalization, str(text))
 
     def fold_to_ascii(self, text):
         """Convert non-ASCII characters to closest ASCII equivalent.
@@ -2771,8 +2770,7 @@ class Workflow(object):
         if isascii(text):
             return text
         text = ''.join([ASCII_REPLACEMENTS.get(c, c) for c in text])
-        return unicode(unicodedata.normalize('NFKD',
-                       text).encode('ascii', 'ignore'))
+        return unicodedata.normalize('NFKD', text).decode('ascii', 'ignore')
 
     def dumbify_punctuation(self, text):
         """Convert non-ASCII punctuation to closest ASCII equivalent.
